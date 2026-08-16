@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Control System</title>
+  <meta name="description" content="A comprehensive Inventory Control System mini project — manage products, categories, stock transactions, and generate reports." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">📦</div>
+        <div>
+          <h1>InvControl</h1>
+          <p>Inventory System</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="dashboard" id="nav-dashboard">
+        <span class="nav-icon">🏠</span><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-section="products" id="nav-products">
+        <span class="nav-icon">📋</span><span>Products</span>
+      </a>
+      <a href="#" class="nav-item" data-section="categories" id="nav-categories">
+        <span class="nav-icon">🏷️</span><span>Categories</span>
+      </a>
+      <a href="#" class="nav-item" data-section="transactions" id="nav-transactions">
+        <span class="nav-icon">🔄</span><span>Transactions</span>
+      </a>
+      <a href="#" class="nav-item" data-section="reports" id="nav-reports">
+        <span class="nav-icon">📊</span><span>Reports</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="db-status" id="dbStatus">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting…</span>
+      </div>
+    </div>
+  </aside>
+
+  
+  <main class="main-content">
+
+    
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">☰</button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="search-bar">
+          <input type="text" id="globalSearch" placeholder="🔍 Search products…" autocomplete="off" />
+        </div>
+        <a href="landing.html" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-secondary);background:var(--card-bg);border:1px solid var(--card-border);text-decoration:none;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.color='var(--text-primary)';this.style.borderColor='rgba(99,102,241,0.4)'" onmouseout="this.style.color='var(--text-secondary)';this.style.borderColor='var(--card-border)'">← Home</a>
+      </div>
+    </header>
+
+    
+    <section class="section active" id="dashboard">
+      <div class="section-header">
+        <h2>Dashboard Overview</h2>
+        <p>Real-time inventory summary powered by Supabase PostgreSQL</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">📦</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalItems">—</span>
+            <span class="stat-label">Total Products</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">💰</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalValue">—</span>
+            <span class="stat-label">Total Stock Value</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">⚠️</div>
+          <div class="stat-info">
+            <span class="stat-value" id="lowStockCount">—</span>
+            <span class="stat-label">Low Stock Alerts</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#ec4899,#db2777)">🏷️</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalCategories">—</span>
+            <span class="stat-label">Categories</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-header">
+          <h3>⚠️ Low Stock Alerts</h3>
+          <button class="btn btn-sm btn-warning" onclick="navigate('products')">View All</button>
+        </div>
+        <div id="lowStockList"><div class="loading-spinner">Loading…</div></div>
+      </div>
+
+      <div class="glass-card mt-4">
+        <div class="card-header">
+          <h3>🔄 Recent Transactions</h3>
+          <button class="btn btn-sm btn-primary" onclick="navigate('transactions')">View All</button>
+        </div>
+        <div id="recentTransactions"><div class="loading-spinner">Loading…</div></div>
+      </div>
+    </section>
+
+    
+    <section class="section" id="products">
+      <div class="section-header">
+        <h2>Products</h2>
+        <p>Add, edit, and manage your inventory items</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="search-filter">
+            <input type="text" id="productSearch" placeholder="🔍 Search products…" class="input-search" oninput="filterProducts()" autocomplete="off" />
+            <select id="categoryFilter" class="input-select" onchange="filterProducts()">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="addProductBtn" onclick="openProductModal()">+ Add Product</button>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="productsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <tr><td colspan="9" class="loading-cell">Loading products…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section" id="categories">
+      <div class="section-header">
+        <h2>Categories</h2>
+        <p>Organise your products into categories</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-header">
+          <h3>All Categories</h3>
+          <button class="btn btn-primary" id="addCategoryBtn" onclick="openCategoryModal()">+ Add Category</button>
+        </div>
+        <div class="categories-grid" id="categoriesGrid">
+          <div class="loading-spinner">Loading categories…</div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section" id="transactions">
+      <div class="section-header">
+        <h2>Stock Transactions</h2>
+        <p>Record stock receipts and issues</p>
+      </div>
+
+      <div class="transaction-actions">
+        <button class="btn btn-success" id="receiveStockBtn" onclick="openTransactionModal('RECEIVE')">📥 Receive Stock</button>
+        <button class="btn btn-danger"  id="issueStockBtn"   onclick="openTransactionModal('ISSUE')">📤 Issue Stock</button>
+      </div>
+
+      <div class="glass-card mt-4">
+        <div class="card-header">
+          <h3>Transaction History</h3>
+          <div class="filter-group">
+            <select id="txTypeFilter" class="input-select" onchange="loadTransactions()">
+              <option value="">All Types</option>
+              <option value="RECEIVE">📥 Receive</option>
+              <option value="ISSUE">📤 Issue</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date &amp; Time</th>
+                <th>Product</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+              <tr><td colspan="6" class="loading-cell">Loading transactions…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section" id="reports">
+      <div class="section-header">
+        <h2>Reports</h2>
+        <p>Inventory analysis and stock insights</p>
+      </div>
+
+      <div class="reports-grid">
+        <div class="glass-card">
+          <div class="card-header"><h3>🔴 Low Stock Report</h3></div>
+          <div id="reportLowStock"><div class="loading-spinner">Loading…</div></div>
+        </div>
+        <div class="glass-card">
+          <div class="card-header"><h3>💰 Stock Value by Category</h3></div>
+          <div id="reportCategoryValue"><div class="loading-spinner">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="glass-card mt-4">
+        <div class="card-header">
+          <h3>📋 Full Inventory Report</h3>
+          <button class="btn btn-primary" id="exportBtn" onclick="exportReport()">⬇️ Export CSV</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fullReportBody">
+              <tr><td colspan="7" class="loading-cell">Loading report…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  
+  <div class="modal-overlay" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="productModalTitle">Add Product</h3>
+        <button class="modal-close" onclick="closeModal('productModal')" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="productForm" onsubmit="saveProduct(event)" autocomplete="off">
+          <input type="hidden" id="productId" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="productName">Product Name *</label>
+              <input type="text" id="productName" required placeholder="e.g. Laptop Dell Inspiron" />
+            </div>
+            <div class="form-group">
+              <label for="productCategory">Category</label>
+              <select id="productCategory">
+                <option value="">Select Category</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="productQty">Quantity *</label>
+              <input type="number" id="productQty" required min="0" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="productUnit">Unit</label>
+              <input type="text" id="productUnit" placeholder="pcs / kg / litre…" value="pcs" />
+            </div>
+            <div class="form-group">
+              <label for="productPrice">Unit Price (₹)</label>
+              <input type="number" id="productPrice" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label for="productReorder">Reorder Level</label>
+              <input type="number" id="productReorder" min="0" placeholder="10" />
+            </div>
+            <div class="form-group full-width">
+              <label for="productSupplier">Supplier</label>
+              <input type="text" id="productSupplier" placeholder="Supplier / vendor name" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('productModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="productSaveBtn">Save Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="modal-overlay" id="categoryModal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Add Category</h3>
+        <button class="modal-close" onclick="closeModal('categoryModal')" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="categoryForm" onsubmit="saveCategory(event)" autocomplete="off">
+          <input type="hidden" id="categoryId" />
+          <div class="form-group">
+            <label for="categoryName">Category Name *</label>
+            <input type="text" id="categoryName" required placeholder="e.g. Electronics" />
+          </div>
+          <div class="form-group" style="margin-top:14px">
+            <label for="categoryDesc">Description</label>
+            <textarea id="categoryDesc" rows="3" placeholder="Brief description of this category…"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('categoryModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="categorySaveBtn">Save Category</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="modal-overlay" id="transactionModal" role="dialog" aria-modal="true" aria-labelledby="transactionModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="transactionModalTitle">Stock Transaction</h3>
+        <button class="modal-close" onclick="closeModal('transactionModal')" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="transactionForm" onsubmit="saveTransaction(event)" autocomplete="off">
+          <input type="hidden" id="transactionType" />
+          <div class="form-group">
+            <label for="transactionProduct">Product *</label>
+            <select id="transactionProduct" required onchange="onTransactionProductChange()">
+              <option value="">Select Product</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:14px">
+            <label for="currentStock">Current Stock</label>
+            <input type="text" id="currentStock" class="input-readonly" readonly />
+          </div>
+          <div class="form-group" style="margin-top:14px">
+            <label for="transactionQty">Quantity *</label>
+            <input type="number" id="transactionQty" required min="1" placeholder="Enter quantity" />
+          </div>
+          <div class="form-group" style="margin-top:14px">
+            <label for="transactionRemarks">Remarks</label>
+            <textarea id="transactionRemarks" rows="3" placeholder="Optional notes…"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('transactionModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="txSubmitBtn">Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script src="app.js"></script>
+
+</body>
+</html>
